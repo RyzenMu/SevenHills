@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = () => {
   };
 
   return (
-    <header className="bg-gray-100 p-4">
+    <header className="bg-gray-300 p-4">
       <nav className="flex justify-end space-x-4">
         {!isAuthenticated ? (
           <>
