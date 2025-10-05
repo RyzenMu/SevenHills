@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = () => {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("http://localhost:4000/login", {
+      const res = await fetch("https://sevenhills-backend.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = () => {
   const handleLogout = async () => {
     if (!token) return;
     try {
-      const res = await fetch("http://localhost:4000/logout", {
+      const res = await fetch("https://sevenhills-backend.onrender.com/logout", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
