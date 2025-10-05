@@ -48,7 +48,7 @@ const Header: React.FC<HeaderProps> = () => {
 
   const handleSignup = async () => {
     try {
-      const res = await fetch("http://localhost:4000/register", {
+      const res = await fetch("https://sevenhills-backend.onrender.com/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
