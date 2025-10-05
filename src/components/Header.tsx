@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from "react";
-import logo from "../assets/sevenHills2.png"
+import logo from "../assets/sevenHills2.png";
 
 type HeaderProps = {};
 
 const Header: React.FC<HeaderProps> = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-   const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(null);
 
-  
-  // Check current user on mount
+  // Load token from localStorage on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem("authToken");
+    if (savedToken) {
+      setToken(savedToken);
+    }
+  }, []);
+
+  // Whenever token changes, verify user
   useEffect(() => {
     if (token) {
       fetch("http://localhost:4000/me", {
@@ -28,6 +35,23 @@ const Header: React.FC<HeaderProps> = () => {
     }
   }, [token]);
 
+  const handleSignup = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Signup successful! Check your email for verification.");
+      } else {
+        alert(data.error || "Signup failed");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -39,9 +63,9 @@ const Header: React.FC<HeaderProps> = () => {
       const data = await res.json();
       if (res.ok) {
         setIsAuthenticated(true);
-        setToken(data.session.access_token); // store JWT
+        setToken(data.session.access_token);
+        localStorage.setItem("authToken", data.session.access_token); // save JWT
         alert("Login successful!");
-        setIsAuthenticated(true);
       } else {
         alert(data.error || "Login failed");
       }
@@ -60,27 +84,8 @@ const Header: React.FC<HeaderProps> = () => {
       if (res.ok) {
         setIsAuthenticated(false);
         setToken(null);
+        localStorage.removeItem("authToken"); // clear JWT
         alert("Logged out!");
-        setIsAuthenticated(false);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleSignup = async () => {
-    try {
-      const res = await fetch("http://localhost:4000/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("Signup successful! Check your email for verification.");
-        setIsAuthenticated(true);
-      } else {
-        alert(data.error || "Signup failed");
       }
     } catch (err) {
       console.error(err);
@@ -88,7 +93,7 @@ const Header: React.FC<HeaderProps> = () => {
   };
 
   return (
-     <header className="bg-gray-400 p-4">
+    <header className="bg-gray-400 p-4">
       <nav className="flex justify-between items-center">
         {/* Logo */}
         <div className="text-xl font-bold text-white cursor-pointer">
