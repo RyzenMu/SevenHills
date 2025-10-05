@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import logo from "../assets/sevenHills1.png"
+import logo from "../assets/sevenHills2.png"
 
 type HeaderProps = {};
 
