@@ -1,35 +1,118 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import logo from "../assets/sevenHills2.png"
 
 type HeaderProps = {};
 
 const Header: React.FC<HeaderProps> = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+  
+  // Check current user on mount
+  useEffect(() => {
+    if (token) {
+      fetch("http://localhost:4000/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        })
+        .catch(() => setIsAuthenticated(false));
+    }
+  }, [token]);
+
+
+  const handleLogin = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsAuthenticated(true);
+        setToken(data.session.access_token); // store JWT
+        alert("Login successful!");
+        setIsAuthenticated(true);
+      } else {
+        alert(data.error || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch("http://localhost:4000/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setIsAuthenticated(false);
+        setToken(null);
+        alert("Logged out!");
+        setIsAuthenticated(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleSignup = () => {
-    setIsAuthenticated(true);
+  const handleSignup = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Signup successful! Check your email for verification.");
+        setIsAuthenticated(true);
+      } else {
+        alert(data.error || "Signup failed");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
-    <header className="bg-gray-400 p-4">
+     <header className="bg-gray-400 p-4">
       <nav className="flex justify-between items-center">
-        {/* Logo Section */}
+        {/* Logo */}
         <div className="text-xl font-bold text-white cursor-pointer">
           <img src={logo} alt="logo" className="h-14 w-14 object-contain" />
         </div>
 
-        {/* Auth Buttons */}
-        <div className="flex space-x-4">
+        {/* Auth Section */}
+        <div className="flex space-x-4 items-center">
           {!isAuthenticated ? (
             <>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="px-2 py-1 rounded"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="px-2 py-1 rounded"
+              />
               <button
                 onClick={handleSignup}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
