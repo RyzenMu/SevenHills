@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = () => {
       <nav className="flex justify-between items-center">
         {/* Logo Section */}
         <div className="text-xl font-bold text-white cursor-pointer">
-          <img src={logo} alt="logo" className="h-10 w-10 object-contain" />
+          <img src={logo} alt="logo" className="h-14 w-14 object-contain" />
         </div>
 
         {/* Auth Buttons */}
