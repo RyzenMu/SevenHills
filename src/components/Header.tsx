@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = () => {
   useEffect(() => {
     if (token) {
       setLoading(true);
-      fetch("http://localhost:4000/me", {
+      fetch("https://sevenhills-backend.onrender.com/me", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
