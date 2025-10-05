@@ -8,6 +8,7 @@ const Header: React.FC<HeaderProps> = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -27,11 +28,16 @@ const Header: React.FC<HeaderProps> = () => {
         .then((data) => {
           if (data.user) {
             setIsAuthenticated(true);
+            setUserEmail(data.user.email); // show logged-in email
           } else {
             setIsAuthenticated(false);
+            setUserEmail(null);
           }
         })
-        .catch(() => setIsAuthenticated(false));
+        .catch(() => {
+          setIsAuthenticated(false);
+          setUserEmail(null);
+        });
     }
   }, [token]);
 
@@ -65,6 +71,7 @@ const Header: React.FC<HeaderProps> = () => {
         setIsAuthenticated(true);
         setToken(data.session.access_token);
         localStorage.setItem("authToken", data.session.access_token); // save JWT
+        setUserEmail(data.user.email); // save user email
         alert("Login successful!");
       } else {
         alert(data.error || "Login failed");
@@ -84,6 +91,7 @@ const Header: React.FC<HeaderProps> = () => {
       if (res.ok) {
         setIsAuthenticated(false);
         setToken(null);
+        setUserEmail(null);
         localStorage.removeItem("authToken"); // clear JWT
         alert("Logged out!");
       }
@@ -101,7 +109,7 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
 
         {/* Auth Section */}
-        <div className="flex space-x-4 items-center">
+        <div className="flex space-x-4 items-center text-white">
           {!isAuthenticated ? (
             <>
               <input
@@ -109,14 +117,14 @@ const Header: React.FC<HeaderProps> = () => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="px-2 py-1 rounded"
+                className="px-2 py-1 rounded text-black"
               />
               <input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="px-2 py-1 rounded"
+                className="px-2 py-1 rounded text-black"
               />
               <button
                 onClick={handleSignup}
@@ -132,12 +140,15 @@ const Header: React.FC<HeaderProps> = () => {
               </button>
             </>
           ) : (
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
+            <div className="flex items-center space-x-4">
+              <span className="font-semibold">Welcome, {userEmail}</span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Logout
+              </button>
+            </div>
           )}
         </div>
       </nav>
