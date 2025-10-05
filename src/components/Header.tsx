@@ -9,18 +9,22 @@ const Header: React.FC<HeaderProps> = () => {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // ✅ new state
 
   // Load token from localStorage on mount
   useEffect(() => {
     const savedToken = localStorage.getItem("authToken");
     if (savedToken) {
       setToken(savedToken);
+    } else {
+      setLoading(false); // no token, stop loading
     }
   }, []);
 
   // Whenever token changes, verify user
   useEffect(() => {
     if (token) {
+      setLoading(true);
       fetch("http://localhost:4000/me", {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -28,7 +32,7 @@ const Header: React.FC<HeaderProps> = () => {
         .then((data) => {
           if (data.user) {
             setIsAuthenticated(true);
-            setUserEmail(data.user.email); // show logged-in email
+            setUserEmail(data.user.email);
           } else {
             setIsAuthenticated(false);
             setUserEmail(null);
@@ -37,7 +41,8 @@ const Header: React.FC<HeaderProps> = () => {
         .catch(() => {
           setIsAuthenticated(false);
           setUserEmail(null);
-        });
+        })
+        .finally(() => setLoading(false)); // ✅ stop loading
     }
   }, [token]);
 
@@ -71,7 +76,7 @@ const Header: React.FC<HeaderProps> = () => {
         setIsAuthenticated(true);
         setToken(data.session.access_token);
         localStorage.setItem("authToken", data.session.access_token); // save JWT
-        setUserEmail(data.user.email); // save user email
+        setUserEmail(data.user.email);
         alert("Login successful!");
       } else {
         alert(data.error || "Login failed");
@@ -110,7 +115,9 @@ const Header: React.FC<HeaderProps> = () => {
 
         {/* Auth Section */}
         <div className="flex space-x-4 items-center text-white">
-          {!isAuthenticated ? (
+          {loading ? (
+            <span className="italic">Checking session...</span> // ✅ loading indicator
+          ) : !isAuthenticated ? (
             <>
               <input
                 type="email"
