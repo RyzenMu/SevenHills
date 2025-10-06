@@ -7,7 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/SevenHills/">
       <AuthProvider>
         <div className="min-h-screen bg-gray-100">
           <Header />
