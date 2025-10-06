@@ -6,7 +6,7 @@ import Home from "./components/Home"; // Create this component for your landing 
 
 function App() {
   return (
-    <BrowserRouter basename="/SevenHills">
+    <BrowserRouter >
       <div className="min-h-screen bg-gray-100">
         <Header />
         <Routes>
