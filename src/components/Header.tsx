@@ -18,7 +18,7 @@ const Header: React.FC = () => {
     const data = await res.json();
     if (res.ok) {
       setAuthData(data.session.access_token, data.user.email);
-      navigate("/SevenHills/hero");
+      navigate("/hero");
     } else {
       alert(data.error || "Login failed");
     }
@@ -31,7 +31,7 @@ const Header: React.FC = () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     setAuthData(null, null);
-    navigate("/SevenHills");
+    navigate("/");
   };
 
   return (
