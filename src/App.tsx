@@ -5,7 +5,7 @@ import Hero from "./components/Hero";
 
 const App: React.FC = () => {
   return (
-    <Router>
+    <Router basename="/SevenHills">
       <Header />
       <Routes>
         <Route path="/" element={<Hero />} />
