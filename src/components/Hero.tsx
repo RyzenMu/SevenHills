@@ -10,7 +10,7 @@ const Hero: React.FC = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen text-center">
         <h2>Please log in to view this page.</h2>
-        <button onClick={() => navigate("/SevenHills")}>Go to Login</button>
+        <button onClick={() => navigate("/")}>Go to Login</button>
       </div>
     );
   }
