@@ -1,17 +1,21 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
+import Home from "./components/Home"; // Create this component for your landing page
 
-const App: React.FC = () => {
+function App() {
   return (
-    <Router basename="/SevenHills">
-      <Header />
-      <Routes>
-        <Route path="/" element={<Hero />} />
-      </Routes>
-    </Router>
+    <BrowserRouter basename="/SevenHills">
+      <div className="min-h-screen bg-gray-100">
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/hero" element={<Hero />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
-};
+}
 
 export default App;

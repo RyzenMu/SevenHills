@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import logo from "../assets/sevenHills2.png";
 
 type HeaderProps = {};
@@ -9,7 +10,9 @@ const Header: React.FC<HeaderProps> = () => {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // ✅ new state
+  const [loading, setLoading] = useState(true);
+  
+  const navigate = useNavigate(); // Add navigation hook
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -17,7 +20,7 @@ const Header: React.FC<HeaderProps> = () => {
     if (savedToken) {
       setToken(savedToken);
     } else {
-      setLoading(false); // no token, stop loading
+      setLoading(false);
     }
   }, []);
 
@@ -42,7 +45,7 @@ const Header: React.FC<HeaderProps> = () => {
           setIsAuthenticated(false);
           setUserEmail(null);
         })
-        .finally(() => setLoading(false)); // ✅ stop loading
+        .finally(() => setLoading(false));
     }
   }, [token]);
 
@@ -56,11 +59,14 @@ const Header: React.FC<HeaderProps> = () => {
       const data = await res.json();
       if (res.ok) {
         alert("Signup successful! Check your email for verification.");
+        setEmail("");
+        setPassword("");
       } else {
         alert(data.error || "Signup failed");
       }
     } catch (err) {
       console.error(err);
+      alert("Signup error. Please try again.");
     }
   };
 
@@ -75,14 +81,18 @@ const Header: React.FC<HeaderProps> = () => {
       if (res.ok) {
         setIsAuthenticated(true);
         setToken(data.session.access_token);
-        localStorage.setItem("authToken", data.session.access_token); // save JWT
+        localStorage.setItem("authToken", data.session.access_token);
         setUserEmail(data.user.email);
-        alert("Login successful!");
+        setEmail("");
+        setPassword("");
+        // Navigate to hero page after successful login
+        navigate("/hero");
       } else {
         alert(data.error || "Login failed");
       }
     } catch (err) {
       console.error(err);
+      alert("Login error. Please try again.");
     }
   };
 
@@ -97,11 +107,14 @@ const Header: React.FC<HeaderProps> = () => {
         setIsAuthenticated(false);
         setToken(null);
         setUserEmail(null);
-        localStorage.removeItem("authToken"); // clear JWT
-        alert("Logged out!");
+        localStorage.removeItem("authToken");
+        // Navigate back to home page after logout
+        navigate("/");
+        alert("Logged out successfully!");
       }
     } catch (err) {
       console.error(err);
+      alert("Logout error. Please try again.");
     }
   };
 
@@ -109,14 +122,17 @@ const Header: React.FC<HeaderProps> = () => {
     <header className="bg-gray-400 p-4">
       <nav className="flex justify-between items-center">
         {/* Logo */}
-        <div className="text-xl font-bold text-white cursor-pointer">
+        <div 
+          className="text-xl font-bold text-white cursor-pointer"
+          onClick={() => navigate("/")}
+        >
           <img src={logo} alt="logo" className="h-14 w-14 object-contain" />
         </div>
 
         {/* Auth Section */}
         <div className="flex space-x-4 items-center text-white">
           {loading ? (
-            <span className="italic">Checking session...</span> // ✅ loading indicator
+            <span className="italic">Checking session...</span>
           ) : !isAuthenticated ? (
             <>
               <input
@@ -131,6 +147,7 @@ const Header: React.FC<HeaderProps> = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleLogin()}
                 className="px-2 py-1 rounded text-black"
               />
               <button
