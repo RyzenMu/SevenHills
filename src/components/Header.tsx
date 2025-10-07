@@ -9,14 +9,17 @@ const Header: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    setIsLoading(true);  // Add this line at the start
     const res = await fetch("https://sevenhills-backend.onrender.com/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
+    setIsLoading(false);  // Add this line after fetch completes
     if (res.ok) {
       setAuthData(data.session.access_token, data.user.email);
       navigate("/hero");
@@ -26,12 +29,14 @@ const Header: React.FC = () => {
   };
 
   const handleSignup = async () => {
+    setIsLoading(true);  // Add this line at the start
     const res = await fetch("https://sevenhills-backend.onrender.com/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
+    setIsLoading(false);  // Add this line after fetch completes
     if (res.ok) {
       setAuthData(data.session.access_token, data.user.email);
       navigate("/hero");
@@ -90,12 +95,20 @@ const Header: React.FC = () => {
 
             {!showSignup ? (
               <>
-                <button
-                  onClick={handleLogin}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                >
-                  Login
-                </button>
+               <button
+                onClick={handleLogin}
+                disabled={isLoading}  // Add this line
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"  // Add disabled styles
+              >
+                {isLoading ? (  // Add this conditional rendering
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  "Login"
+                )}
+              </button>
                 <button
                   onClick={() => setShowSignup(true)}
                   className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -107,9 +120,17 @@ const Header: React.FC = () => {
               <>
                 <button
                   onClick={handleSignup}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                  disabled={isLoading}  // Add this line
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"  // Add disabled styles
                 >
-                  Create Account
+                  {isLoading ? (  // Add this conditional rendering
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    "Create Account"
+                  )}
                 </button>
                 <button
                   onClick={() => setShowSignup(false)}
