@@ -22,6 +22,7 @@ const Hero: React.FC = () => {
   const [newTweet, setNewTweet] = useState("");
   const [media, setMedia] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
 
   if (!isAuthenticated) {
     return (
@@ -71,10 +72,35 @@ const Hero: React.FC = () => {
     );
   };
 
+  // Filter tweets based on active tab
+  const filteredTweets = tweets.filter((tweet) => {
+    if (activeTab === "pending") return !tweet.completed;
+    if (activeTab === "completed") return tweet.completed;
+    return true;
+  });
+
   return (
     <section className="flex flex-col justify-start items-center min-h-screen bg-gradient-to-br from-blue-400 to-purple-500 text-white p-6">
       <h1 className="text-4xl font-bold mb-6">Your Todo Tweets</h1>
 
+      {/* Tabs */}
+      <div className="flex bg-white rounded-full mb-6 p-1 shadow-lg">
+        {["all", "pending", "completed"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as "all" | "pending" | "completed")}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+              activeTab === tab
+                ? "bg-blue-500 text-white"
+                : "text-blue-600 hover:bg-blue-100"
+            }`}
+          >
+            {tab === "all" ? "All" : tab === "pending" ? "Pending" : "Completed"}
+          </button>
+        ))}
+      </div>
+
+      {/* Add tweet section */}
       {adding ? (
         <div className="bg-white text-gray-800 p-4 rounded-2xl w-full max-w-md shadow-lg mb-6">
           <textarea
@@ -110,34 +136,32 @@ const Hero: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : tweets.length === 0 ? (
-        <button
-          onClick={() => setAdding(true)}
-          className="bg-white text-blue-600 px-6 py-3 rounded-full font-semibold shadow-md"
-        >
-          + Add Tweet
-        </button>
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="bg-white text-blue-600 px-4 py-2 rounded-full font-semibold mb-4"
+          className="bg-white text-blue-600 px-4 py-2 rounded-full font-semibold mb-4 shadow-md"
         >
           + New Tweet
         </button>
       )}
 
+      {/* Tweets List */}
       <div className="flex flex-col items-center w-full">
-        {tweets.map((tweet) => (
-          <Tweet
-            key={tweet.id}
-            id={tweet.id}
-            text={tweet.text}
-            media={tweet.media}
-            completed={tweet.completed}
-            onDelete={handleDelete}
-            onComplete={handleComplete}
-          />
-        ))}
+        {filteredTweets.length === 0 ? (
+          <p className="text-white/90 mt-6 text-center">No tweets found in this category.</p>
+        ) : (
+          filteredTweets.map((tweet) => (
+            <Tweet
+              key={tweet.id}
+              id={tweet.id}
+              text={tweet.text}
+              media={tweet.media}
+              completed={tweet.completed}
+              onDelete={handleDelete}
+              onComplete={handleComplete}
+            />
+          ))
+        )}
       </div>
     </section>
   );
