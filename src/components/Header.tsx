@@ -7,6 +7,7 @@ const Header: React.FC = () => {
   const { isAuthenticated, userEmail, token, setAuthData } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showSignup, setShowSignup] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -21,6 +22,22 @@ const Header: React.FC = () => {
       navigate("/hero");
     } else {
       alert(data.error || "Login failed");
+    }
+  };
+
+  const handleSignup = async () => {
+    const res = await fetch("https://sevenhills-backend.onrender.com/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setAuthData(data.session.access_token, data.user.email);
+      navigate("/hero");
+      setShowSignup(false);
+    } else {
+      alert(data.error || "Signup failed");
     }
   };
 
@@ -71,12 +88,37 @@ const Header: React.FC = () => {
               />
             </div>
 
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Login
-            </button>
+            {!showSignup ? (
+              <>
+                <button
+                  onClick={handleLogin}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => setShowSignup(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                >
+                  Signup
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleSignup}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                >
+                  Create Account
+                </button>
+                <button
+                  onClick={() => setShowSignup(false)}
+                  className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-3">
