@@ -2,7 +2,6 @@ import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import Tweet from "./Tweet";
-import type { text } from "stream/consumers";
 
 interface TweetType {
   id: number;
