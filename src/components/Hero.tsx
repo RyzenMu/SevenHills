@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import Tweet from "./Tweet";
@@ -19,10 +19,32 @@ const Hero: React.FC = () => {
     { id: 2, text: "Start ML project", media: null, completed: false },
   ]);
 
+  
   const [newTweet, setNewTweet] = useState("");
   const [media, setMedia] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
+
+    // Fetch tweets from Neon DB on component mount
+  useEffect(() => {
+    const fetchTweets = async () => {
+      try {
+        const res = await fetch("https://sevenhills-backend.onrender.com/tweets");
+        const data = await res.json();
+
+        if (res.ok && data.tweets) {
+          setTweets((prev) => [...data.tweets, ...prev]); // Replace local dummy tweets with DB data
+        } else {
+          console.error("Failed to fetch tweets:", data.error);
+        }
+      } catch (err) {
+        console.error("Network error fetching tweets:", err);
+      }
+    };
+
+    fetchTweets();
+  }, []);
+
 
   if (!isAuthenticated) {
     return (
