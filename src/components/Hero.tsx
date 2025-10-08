@@ -78,13 +78,21 @@ const handleDelete = async (id: number) => {
 
 const handleComplete = async (id: number) => {
   try {
-    const res = await fetch(`"https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
+    const res = await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
       method: "PUT",
     });
     const data = await res.json();
     setTweets(tweets.map((t) => (t.id === id ? data.tweet : t)));
   } catch (err) {
     alert("Error updating tweet");
+  }
+};
+
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    const url = URL.createObjectURL(file);
+    setMedia(url);
   }
 };
 
