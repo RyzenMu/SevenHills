@@ -38,39 +38,56 @@ const Hero: React.FC = () => {
     );
   }
 
-  const handleAddTweet = () => {
-    if (!newTweet.trim()) return;
-    const newEntry: TweetType = {
-      id: Date.now(),
-      text: newTweet,
-      media,
-      completed: false,
-    };
-    setTweets([newEntry, ...tweets]);
-    setNewTweet("");
-    setMedia(null);
-    setAdding(false);
-  };
+ const handleAddTweet = async () => {
+  if (!newTweet.trim()) return;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setMedia(url);
+  try {
+    const response = await fetch("https://sevenhills-backend.onrender.com/tweets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tweet: newTweet,
+        media_url: media,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      setTweets([data.tweet, ...tweets]); // prepend new tweet
+      setNewTweet("");
+      setMedia(null);
+      setAdding(false);
+    } else {
+      alert(data.error || "Error adding tweet");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Network error");
+  }
+};
 
-  const handleDelete = (id: number) => {
-    setTweets(tweets.filter((tweet) => tweet.id !== id));
-  };
 
-  const handleComplete = (id: number) => {
-    setTweets(
-      tweets.map((tweet) =>
-        tweet.id === id ? { ...tweet, completed: !tweet.completed } : tweet
-      )
-    );
-  };
+const handleDelete = async (id: number) => {
+  try {
+    await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}`, { method: "DELETE" });
+    setTweets(tweets.filter((t) => t.id !== id));
+  } catch (err) {
+    alert("Error deleting tweet");
+  }
+};
+
+const handleComplete = async (id: number) => {
+  try {
+    const res = await fetch(`"https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
+      method: "PUT",
+    });
+    const data = await res.json();
+    setTweets(tweets.map((t) => (t.id === id ? data.tweet : t)));
+  } catch (err) {
+    alert("Error updating tweet");
+  }
+};
+
 
   // Filter tweets based on active tab
   const filteredTweets = tweets.filter((tweet) => {
