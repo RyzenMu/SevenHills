@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { supabase } from "../supabaseClient"; // ✅ import your Supabase client
+import { supabase } from "../supabaseClient";
 import Tweet from "./Tweet";
 
 interface TweetType {
@@ -22,7 +22,7 @@ const Hero: React.FC = () => {
 
   const [newTweet, setNewTweet] = useState("");
   const [media, setMedia] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null); // ✅ show file name
+  const [fileName, setFileName] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
 
@@ -60,12 +60,12 @@ const Hero: React.FC = () => {
     );
   }
 
-  // ✅ Upload file to Supabase
+  // Upload file to Supabase
   const uploadToSupabase = async (file: File) => {
     try {
       const filePath = `${Date.now()}-${file.name}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("seven_hills_media")
         .upload(filePath, file);
 
@@ -75,7 +75,7 @@ const Hero: React.FC = () => {
         .from("seven_hills_media")
         .getPublicUrl(filePath);
 
-      return publicUrlData.publicUrl; // ✅ return public file URL
+      return publicUrlData.publicUrl;
     } catch (err) {
       console.error("Supabase upload error:", err);
       return null;
@@ -132,14 +132,14 @@ const Hero: React.FC = () => {
     }
   };
 
-  // ✅ Handle file change (upload + preview + file name)
+  // Handle file change (upload + preview + file name)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setFileName(file.name); // ✅ show selected file name
+    setFileName(file.name);
 
-    const publicUrl = await uploadToSupabase(file); // ✅ upload to Supabase
+    const publicUrl = await uploadToSupabase(file);
     if (publicUrl) {
       setMedia(publicUrl);
     } else {
