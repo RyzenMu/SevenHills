@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { supabase } from "../supabaseClient"; // ✅ import your Supabase client
 import Tweet from "./Tweet";
 
 interface TweetType {
@@ -19,13 +20,13 @@ const Hero: React.FC = () => {
     { id: 2, text: "Start ML project", media: null, completed: false },
   ]);
 
-  
   const [newTweet, setNewTweet] = useState("");
   const [media, setMedia] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null); // ✅ show file name
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
 
-    // Fetch tweets from Neon DB on component mount
+  // Fetch tweets
   useEffect(() => {
     const fetchTweets = async () => {
       try {
@@ -33,7 +34,7 @@ const Hero: React.FC = () => {
         const data = await res.json();
 
         if (res.ok && data.tweets) {
-          setTweets((prev) => [...data.tweets, ...prev]); // Replace local dummy tweets with DB data
+          setTweets((prev) => [...data.tweets, ...prev]);
         } else {
           console.error("Failed to fetch tweets:", data.error);
         }
@@ -44,7 +45,6 @@ const Hero: React.FC = () => {
 
     fetchTweets();
   }, []);
-
 
   if (!isAuthenticated) {
     return (
@@ -60,66 +60,93 @@ const Hero: React.FC = () => {
     );
   }
 
- const handleAddTweet = async () => {
-  if (!newTweet.trim()) return;
+  // ✅ Upload file to Supabase
+  const uploadToSupabase = async (file: File) => {
+    try {
+      const filePath = `${Date.now()}-${file.name}`;
 
-  try {
-    const response = await fetch("https://sevenhills-backend.onrender.com/tweets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: newTweet,
-        media_url: media,
-      }),
-    });
+      const { data, error } = await supabase.storage
+        .from("seven_hills_media")
+        .upload(filePath, file);
 
-    const data = await response.json();
-    if (response.ok) {
-      setTweets([data.tweet, ...tweets]); // prepend new tweet
-      setNewTweet("");
-      setMedia(null);
-      setAdding(false);
-    } else {
-      alert(data.error || "Error adding tweet");
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("seven_hills_media")
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl; // ✅ return public file URL
+    } catch (err) {
+      console.error("Supabase upload error:", err);
+      return null;
     }
-  } catch (err) {
-    console.error(err);
-    alert("Network error");
-  }
-};
+  };
 
+  const handleAddTweet = async () => {
+    if (!newTweet.trim()) return;
 
-const handleDelete = async (id: number) => {
-  try {
-    await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}`, { method: "DELETE" });
-    setTweets(tweets.filter((t) => t.id !== id));
-  } catch (err) {
-    alert("Error deleting tweet");
-  }
-};
+    try {
+      const response = await fetch("https://sevenhills-backend.onrender.com/tweets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: newTweet,
+          media_url: media,
+        }),
+      });
 
-const handleComplete = async (id: number) => {
-  try {
-    const res = await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
-      method: "PUT",
-    });
-    const data = await res.json();
-    setTweets(tweets.map((t) => (t.id === id ? data.tweet : t)));
-  } catch (err) {
-    alert("Error updating tweet");
-  }
-};
+      const data = await response.json();
+      if (response.ok) {
+        setTweets([data.tweet, ...tweets]);
+        setNewTweet("");
+        setMedia(null);
+        setFileName(null);
+        setAdding(false);
+      } else {
+        alert(data.error || "Error adding tweet");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    }
+  };
 
-const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    const url = URL.createObjectURL(file);
-    setMedia(url);
-  }
-};
+  const handleDelete = async (id: number) => {
+    try {
+      await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}`, { method: "DELETE" });
+      setTweets(tweets.filter((t) => t.id !== id));
+    } catch (err) {
+      alert("Error deleting tweet");
+    }
+  };
 
+  const handleComplete = async (id: number) => {
+    try {
+      const res = await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+      setTweets(tweets.map((t) => (t.id === id ? data.tweet : t)));
+    } catch (err) {
+      alert("Error updating tweet");
+    }
+  };
 
-  // Filter tweets based on active tab
+  // ✅ Handle file change (upload + preview + file name)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name); // ✅ show selected file name
+
+    const publicUrl = await uploadToSupabase(file); // ✅ upload to Supabase
+    if (publicUrl) {
+      setMedia(publicUrl);
+    } else {
+      alert("Failed to upload file");
+    }
+  };
+
   const filteredTweets = tweets.filter((tweet) => {
     if (activeTab === "pending") return !tweet.completed;
     if (activeTab === "completed") return tweet.completed;
@@ -147,7 +174,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         ))}
       </div>
 
-      {/* Add tweet section */}
+      {/* Add tweet */}
       {adding ? (
         <div className="bg-white text-gray-800 p-4 rounded-2xl w-full max-w-md shadow-lg mb-6">
           <textarea
@@ -158,14 +185,15 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             onChange={(e) => setNewTweet(e.target.value)}
           />
           <div className="flex items-center justify-between">
-            <label className="text-sm cursor-pointer text-blue-600">
-              Add Pic/Video
+            <label className="text-sm cursor-pointer text-blue-600 flex items-center gap-2">
+              <span>Add Pic/Video</span>
               <input
                 type="file"
                 accept="image/*,video/*"
                 className="hidden"
                 onChange={handleFileChange}
               />
+              {fileName && <span className="text-gray-600 text-xs">{fileName}</span>}
             </label>
             <div className="flex gap-2">
               <button
@@ -192,7 +220,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         </button>
       )}
 
-      {/* Tweets List */}
+      {/* Tweets list */}
       <div className="flex flex-col items-center w-full">
         {filteredTweets.length === 0 ? (
           <p className="text-white/90 mt-6 text-center">No tweets found in this category.</p>
