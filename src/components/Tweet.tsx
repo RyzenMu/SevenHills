@@ -16,18 +16,31 @@ const Tweet: React.FC<TweetProps> = ({ id, text, media, completed, onDelete, onC
         completed ? "border-green-400" : "border-gray-200"
       }`}
     >
-      <p className={`text-lg mb-2 ${completed ? "line-through text-gray-500" : ""}`}>{text}</p>
+      {/* Tweet Text */}
+      <p className={`text-lg mb-3 ${completed ? "line-through text-gray-500" : ""}`}>
+        {text}
+      </p>
 
+      {/* Media (Image or Video) */}
       {media && (
-        <div className="mb-2">
-          {media.match(/\.(jpeg|jpg|png|gif)$/) ? (
-            <img src={media} alt="tweet media" className="rounded-lg w-full" />
+        <div className="mb-3 flex justify-center">
+          {media.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+            <img
+              src={media}
+              alt="tweet media"
+              className="rounded-xl object-cover w-[40vw] h-[40vh] max-w-[90%] shadow-md"
+            />
           ) : (
-            <video src={media} controls className="rounded-lg w-full" />
+            <video
+              src={media}
+              controls
+              className="rounded-xl object-cover w-[40vw] h-[40vh] max-w-[90%] shadow-md"
+            />
           )}
         </div>
       )}
 
+      {/* Buttons */}
       <div className="flex justify-between items-center mt-2">
         <button
           onClick={() => onComplete(id)}
