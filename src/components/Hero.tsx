@@ -26,26 +26,52 @@ const Hero: React.FC = () => {
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
 
-  // Fetch tweets
+  // ===============================
+  // FETCH TWEETS
+  // ===============================
   useEffect(() => {
     const fetchTweets = async () => {
+      console.log("🛰️ Fetching tweets from backend...");
       try {
         const res = await fetch("https://sevenhills-backend.onrender.com/tweets");
         const data = await res.json();
 
+        console.log("📦 Raw response data:", data);
+
         if (res.ok && data.tweets) {
-          setTweets((prev) => [...data.tweets, ...prev]);
+          // Log each tweet
+          data.tweets.forEach((t: any, i: number) => {
+            console.log(`Tweet[${i}]`, {
+              id: t.id,
+              text: t.text,
+              media: t.media || t.media_url,
+              completed: t.completed,
+            });
+          });
+
+          // Normalize property name if backend uses media_url
+          const normalizedTweets = data.tweets.map((t: any) => ({
+            id: t.id,
+            text: t.text,
+            media: t.media || t.media_url || null,
+            completed: t.completed,
+          }));
+
+          setTweets((prev) => [...normalizedTweets, ...prev]);
         } else {
-          console.error("Failed to fetch tweets:", data.error);
+          console.error("❌ Failed to fetch tweets:", data.error);
         }
       } catch (err) {
-        console.error("Network error fetching tweets:", err);
+        console.error("🌐 Network error fetching tweets:", err);
       }
     };
 
     fetchTweets();
   }, []);
 
+  // ===============================
+  // AUTH CHECK
+  // ===============================
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col justify-center items-center h-screen text-center">
@@ -60,8 +86,11 @@ const Hero: React.FC = () => {
     );
   }
 
-  // Upload file to Supabase
+  // ===============================
+  // SUPABASE UPLOAD
+  // ===============================
   const uploadToSupabase = async (file: File) => {
+    console.log("📤 Uploading file to Supabase:", file.name);
     try {
       const filePath = `${Date.now()}-${file.name}`;
 
@@ -75,15 +104,22 @@ const Hero: React.FC = () => {
         .from("seven_hills_media")
         .getPublicUrl(filePath);
 
+      console.log("✅ File uploaded. Public URL:", publicUrlData.publicUrl);
+
       return publicUrlData.publicUrl;
     } catch (err) {
-      console.error("Supabase upload error:", err);
+      console.error("❌ Supabase upload error:", err);
       return null;
     }
   };
 
+  // ===============================
+  // ADD TWEET
+  // ===============================
   const handleAddTweet = async () => {
     if (!newTweet.trim()) return;
+
+    console.log("📝 Adding new tweet:", { text: newTweet, media });
 
     try {
       const response = await fetch("https://sevenhills-backend.onrender.com/tweets", {
@@ -96,8 +132,19 @@ const Hero: React.FC = () => {
       });
 
       const data = await response.json();
+      console.log("📦 Backend response after add:", data);
+
       if (response.ok) {
-        setTweets([data.tweet, ...tweets]);
+        const addedTweet = {
+          id: data.tweet.id,
+          text: data.tweet.text,
+          media: data.tweet.media || data.tweet.media_url || null,
+          completed: data.tweet.completed,
+        };
+
+        console.log("✅ Added tweet:", addedTweet);
+
+        setTweets([addedTweet, ...tweets]);
         setNewTweet("");
         setMedia(null);
         setFileName(null);
@@ -106,53 +153,78 @@ const Hero: React.FC = () => {
         alert(data.error || "Error adding tweet");
       }
     } catch (err) {
-      console.error(err);
+      console.error("❌ Network error while adding tweet:", err);
       alert("Network error");
     }
   };
 
+  // ===============================
+  // DELETE TWEET
+  // ===============================
   const handleDelete = async (id: number) => {
+    console.log("🗑️ Deleting tweet with ID:", id);
     try {
       await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}`, { method: "DELETE" });
       setTweets(tweets.filter((t) => t.id !== id));
     } catch (err) {
+      console.error("❌ Error deleting tweet:", err);
       alert("Error deleting tweet");
     }
   };
 
+  // ===============================
+  // COMPLETE TWEET
+  // ===============================
   const handleComplete = async (id: number) => {
+    console.log("✅ Marking tweet complete:", id);
     try {
       const res = await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
         method: "PUT",
       });
       const data = await res.json();
+      console.log("🔄 Updated tweet response:", data);
+
       setTweets(tweets.map((t) => (t.id === id ? data.tweet : t)));
     } catch (err) {
+      console.error("❌ Error updating tweet:", err);
       alert("Error updating tweet");
     }
   };
 
-  // Handle file change (upload + preview + file name)
+  // ===============================
+  // HANDLE FILE UPLOAD
+  // ===============================
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log("📁 Selected file:", file.name);
     setFileName(file.name);
 
     const publicUrl = await uploadToSupabase(file);
     if (publicUrl) {
+      console.log("🌐 Setting media URL:", publicUrl);
       setMedia(publicUrl);
     } else {
+      console.error("❌ Failed to upload file");
       alert("Failed to upload file");
     }
   };
 
+  // ===============================
+  // FILTER TWEETS
+  // ===============================
   const filteredTweets = tweets.filter((tweet) => {
     if (activeTab === "pending") return !tweet.completed;
     if (activeTab === "completed") return tweet.completed;
     return true;
   });
 
+  console.log("📋 Filtered tweets:", filteredTweets);
+
+  // ===============================
+  // UI RENDER
+  // ===============================
   return (
     <section className="flex flex-col justify-start items-center min-h-screen bg-gradient-to-br from-blue-400 to-purple-500 text-white p-6">
       <h1 className="text-4xl font-bold mb-6">Your Todo Tweets</h1>
