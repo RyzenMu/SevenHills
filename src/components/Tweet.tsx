@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 interface TweetProps {
   id: number;
@@ -10,6 +10,17 @@ interface TweetProps {
 }
 
 const Tweet: React.FC<TweetProps> = ({ id, text, media, completed, onDelete, onComplete }) => {
+  // Debug logs for media
+  useEffect(() => {
+    console.log(`Tweet ID: ${id}`);
+    console.log("Media value:", media);
+    if (media) {
+      console.log("Media type:", media.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? "image" : "video");
+    } else {
+      console.log("No media attached to this tweet.");
+    }
+  }, [id, media]);
+
   return (
     <div
       className={`p-4 rounded-2xl shadow-md bg-white text-gray-800 w-full max-w-md mb-4 border ${
@@ -17,24 +28,26 @@ const Tweet: React.FC<TweetProps> = ({ id, text, media, completed, onDelete, onC
       }`}
     >
       {/* Tweet Text */}
-      <p className={`text-lg mb-3 ${completed ? "line-through text-gray-500" : ""}`}>
-        {text}
-      </p>
+      <p className={`text-lg mb-3 ${completed ? "line-through text-gray-500" : ""}`}>{text}</p>
 
       {/* Media (Image or Video) */}
       {media && (
-        <div className="mb-3 flex justify-center">
+        <div className="mb-4 flex justify-center">
           {media.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
             <img
               src={media}
               alt="tweet media"
-              className="rounded-xl object-cover w-[40vw] h-[40vh] max-w-[90%] shadow-md"
+              className="rounded-xl object-cover w-[40vw] h-[40vh] max-w-[90%] shadow-md border"
+              onError={() => console.error(`Failed to load image: ${media}`)}
+              onLoad={() => console.log(`Image loaded successfully: ${media}`)}
             />
           ) : (
             <video
               src={media}
               controls
-              className="rounded-xl object-cover w-[40vw] h-[40vh] max-w-[90%] shadow-md"
+              className="rounded-xl object-cover w-[40vw] h-[40vh] max-w-[90%] shadow-md border"
+              onError={() => console.error(`Failed to load video: ${media}`)}
+              onLoadedData={() => console.log(`Video loaded successfully: ${media}`)}
             />
           )}
         </div>
