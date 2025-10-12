@@ -25,6 +25,7 @@ const Hero: React.FC = () => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
+  const [uploading, setUploading] = useState(false); // 🔄 Added for loader control
 
   // ===============================
   // FETCH TWEETS
@@ -39,7 +40,6 @@ const Hero: React.FC = () => {
         console.log("📦 Raw response data:", data);
 
         if (res.ok && data.tweets) {
-          // Log each tweet
           data.tweets.forEach((t: any, i: number) => {
             console.log(`Tweet[${i}]`, {
               id: t.id,
@@ -49,7 +49,6 @@ const Hero: React.FC = () => {
             });
           });
 
-          // Normalize property name if backend uses media_url
           const normalizedTweets = data.tweets.map((t: any) => ({
             id: t.id,
             text: t.text,
@@ -91,6 +90,7 @@ const Hero: React.FC = () => {
   // ===============================
   const uploadToSupabase = async (file: File) => {
     console.log("📤 Uploading file to Supabase:", file.name);
+    setUploading(true); // 🔄 Start spinner
     try {
       const filePath = `${Date.now()}-${file.name}`;
 
@@ -110,6 +110,8 @@ const Hero: React.FC = () => {
     } catch (err) {
       console.error("❌ Supabase upload error:", err);
       return null;
+    } finally {
+      setUploading(false); // 🛑 Stop spinner regardless of success/fail
     }
   };
 
@@ -265,14 +267,29 @@ const Hero: React.FC = () => {
                 className="hidden"
                 onChange={handleFileChange}
               />
-              {fileName && <span className="text-gray-600 text-xs">{fileName}</span>}
+              {fileName && (
+                <span className="text-gray-600 text-xs flex items-center gap-2">
+                  {fileName}
+                  {uploading && (
+                    <span
+                      className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                      title="Uploading..."
+                    ></span>
+                  )}
+                </span>
+              )}
             </label>
             <div className="flex gap-2">
               <button
                 onClick={handleAddTweet}
-                className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm"
+                disabled={uploading} // ⛔ Disabled while uploading
+                className={`px-3 py-1 rounded-lg text-sm ${
+                  uploading
+                    ? "bg-blue-300 text-white cursor-not-allowed"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
               >
-                Submit
+                {uploading ? "Uploading..." : "Submit"}
               </button>
               <button
                 onClick={() => setAdding(false)}
