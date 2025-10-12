@@ -15,17 +15,13 @@ const Hero: React.FC = () => {
   const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [tweets, setTweets] = useState<TweetType[]>([
-    { id: 1, text: "Complete video tutorial on React", media: null, completed: false },
-    { id: 2, text: "Start ML project", media: null, completed: false },
-  ]);
-
+  const [tweets, setTweets] = useState<TweetType[]>([]);
   const [newTweet, setNewTweet] = useState("");
   const [media, setMedia] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
-  const [uploading, setUploading] = useState(false); // 🔄 Added for loader control
+  const [uploading, setUploading] = useState(false);
 
   // ===============================
   // FETCH TWEETS
@@ -37,26 +33,14 @@ const Hero: React.FC = () => {
         const res = await fetch("https://sevenhills-backend.onrender.com/tweets");
         const data = await res.json();
 
-        console.log("📦 Raw response data:", data);
-
         if (res.ok && data.tweets) {
-          data.tweets.forEach((t: any, i: number) => {
-            console.log(`Tweet[${i}]`, {
-              id: t.id,
-              text: t.text,
-              media: t.media || t.media_url,
-              completed: t.completed,
-            });
-          });
-
           const normalizedTweets = data.tweets.map((t: any) => ({
             id: t.id,
             text: t.text,
             media: t.media || t.media_url || null,
             completed: t.completed,
           }));
-
-          setTweets((prev) => [...normalizedTweets, ...prev]);
+          setTweets(normalizedTweets);
         } else {
           console.error("❌ Failed to fetch tweets:", data.error);
         }
@@ -86,13 +70,16 @@ const Hero: React.FC = () => {
   }
 
   // ===============================
-  // SUPABASE UPLOAD
+  // SUPABASE UPLOAD (fixed)
   // ===============================
   const uploadToSupabase = async (file: File) => {
     console.log("📤 Uploading file to Supabase:", file.name);
-    setUploading(true); // 🔄 Start spinner
+    setUploading(true);
     try {
-      const filePath = `${Date.now()}-${file.name}`;
+      // Sanitize filename
+      const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const uniqueName = `${Date.now()}_${safeFileName}`;
+      const filePath = `seven_hills_media/${uniqueName}`;
 
       const { error } = await supabase.storage
         .from("seven_hills_media")
@@ -105,13 +92,12 @@ const Hero: React.FC = () => {
         .getPublicUrl(filePath);
 
       console.log("✅ File uploaded. Public URL:", publicUrlData.publicUrl);
-
       return publicUrlData.publicUrl;
     } catch (err) {
       console.error("❌ Supabase upload error:", err);
       return null;
     } finally {
-      setUploading(false); // 🛑 Stop spinner regardless of success/fail
+      setUploading(false);
     }
   };
 
@@ -120,8 +106,6 @@ const Hero: React.FC = () => {
   // ===============================
   const handleAddTweet = async () => {
     if (!newTweet.trim()) return;
-
-    console.log("📝 Adding new tweet:", { text: newTweet, media });
 
     try {
       const response = await fetch("https://sevenhills-backend.onrender.com/tweets", {
@@ -134,7 +118,6 @@ const Hero: React.FC = () => {
       });
 
       const data = await response.json();
-      console.log("📦 Backend response after add:", data);
 
       if (response.ok) {
         const addedTweet = {
@@ -143,8 +126,6 @@ const Hero: React.FC = () => {
           media: data.tweet.media || data.tweet.media_url || null,
           completed: data.tweet.completed,
         };
-
-        console.log("✅ Added tweet:", addedTweet);
 
         setTweets([addedTweet, ...tweets]);
         setNewTweet("");
@@ -164,13 +145,13 @@ const Hero: React.FC = () => {
   // DELETE TWEET
   // ===============================
   const handleDelete = async (id: number) => {
-    console.log("🗑️ Deleting tweet with ID:", id);
     try {
-      await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}`, { method: "DELETE" });
+      await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}`, {
+        method: "DELETE",
+      });
       setTweets(tweets.filter((t) => t.id !== id));
     } catch (err) {
       console.error("❌ Error deleting tweet:", err);
-      alert("Error deleting tweet");
     }
   };
 
@@ -178,23 +159,19 @@ const Hero: React.FC = () => {
   // COMPLETE TWEET
   // ===============================
   const handleComplete = async (id: number) => {
-    console.log("✅ Marking tweet complete:", id);
     try {
       const res = await fetch(`https://sevenhills-backend.onrender.com/tweets/${id}/complete`, {
         method: "PUT",
       });
       const data = await res.json();
-      console.log("🔄 Updated tweet response:", data);
-
       setTweets(tweets.map((t) => (t.id === id ? data.tweet : t)));
     } catch (err) {
       console.error("❌ Error updating tweet:", err);
-      alert("Error updating tweet");
     }
   };
 
   // ===============================
-  // HANDLE FILE UPLOAD
+  // HANDLE FILE UPLOAD (uses fixed uploader)
   // ===============================
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -205,10 +182,8 @@ const Hero: React.FC = () => {
 
     const publicUrl = await uploadToSupabase(file);
     if (publicUrl) {
-      console.log("🌐 Setting media URL:", publicUrl);
       setMedia(publicUrl);
     } else {
-      console.error("❌ Failed to upload file");
       alert("Failed to upload file");
     }
   };
@@ -221,8 +196,6 @@ const Hero: React.FC = () => {
     if (activeTab === "completed") return tweet.completed;
     return true;
   });
-
-  console.log("📋 Filtered tweets:", filteredTweets);
 
   // ===============================
   // UI RENDER
@@ -282,7 +255,7 @@ const Hero: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleAddTweet}
-                disabled={uploading} // ⛔ Disabled while uploading
+                disabled={uploading}
                 className={`px-3 py-1 rounded-lg text-sm ${
                   uploading
                     ? "bg-blue-300 text-white cursor-not-allowed"
@@ -312,7 +285,9 @@ const Hero: React.FC = () => {
       {/* Tweets list */}
       <div className="flex flex-col items-center w-full">
         {filteredTweets.length === 0 ? (
-          <p className="text-white/90 mt-6 text-center">No tweets found in this category.</p>
+          <p className="text-white/90 mt-6 text-center">
+            No tweets found in this category.
+          </p>
         ) : (
           filteredTweets.map((tweet) => (
             <Tweet
