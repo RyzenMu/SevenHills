@@ -1,7 +1,36 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import logo from "../assets/sevenHills2.png";
+
+// CookieManager utility class
+class CookieManager {
+  static set(name: string, value: string, days?: number): void {
+    let expires = "";
+    if (days) {
+      const date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = `${name}=${encodeURIComponent(value)}${expires}; path=/`;
+  }
+
+  static get(name: string): string | null {
+    const nameEQ = name + "=";
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(nameEQ)) {
+        return decodeURIComponent(cookie.substring(nameEQ.length));
+      }
+    }
+    return null;
+  }
+
+  static delete(name: string): void {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+  }
+}
 
 const Header: React.FC = () => {
   const { isAuthenticated, userEmail, token, setAuthData } = useContext(AuthContext);
@@ -11,16 +40,30 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load saved credentials from cookies on component mount
+  useEffect(() => {
+    const savedEmail = CookieManager.get("userEmail");
+    const savedPassword = CookieManager.get("userPassword");
+    
+    if (savedEmail) setEmail(savedEmail);
+    if (savedPassword) setPassword(savedPassword);
+  }, []);
+
   const handleLogin = async () => {
-    setIsLoading(true);  // Add this line at the start
+    setIsLoading(true);
     const res = await fetch("https://sevenhills-backend.onrender.com/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
-    setIsLoading(false);  // Add this line after fetch completes
+    setIsLoading(false);
+    
     if (res.ok) {
+      // Save credentials to cookies on successful login (7 days expiry)
+      CookieManager.set("userEmail", email, 7);
+      CookieManager.set("userPassword", password, 7);
+      
       setAuthData(data.session.access_token, data.user.email);
       navigate("/hero");
     } else {
@@ -29,15 +72,20 @@ const Header: React.FC = () => {
   };
 
   const handleSignup = async () => {
-    setIsLoading(true);  // Add this line at the start
+    setIsLoading(true);
     const res = await fetch("https://sevenhills-backend.onrender.com/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
-    setIsLoading(false);  // Add this line after fetch completes
+    setIsLoading(false);
+    
     if (res.ok) {
+      // Save credentials to cookies on successful signup (7 days expiry)
+      CookieManager.set("userEmail", email, 7);
+      CookieManager.set("userPassword", password, 7);
+      
       setAuthData(data.session.access_token, data.user.email);
       navigate("/hero");
       setShowSignup(false);
@@ -52,6 +100,11 @@ const Header: React.FC = () => {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
+    
+    // Clear cookies on logout
+    CookieManager.delete("userEmail");
+    CookieManager.delete("userPassword");
+    
     setAuthData(null, null);
     navigate("/");
   };
@@ -95,20 +148,20 @@ const Header: React.FC = () => {
 
             {!showSignup ? (
               <>
-               <button
-                onClick={handleLogin}
-                disabled={isLoading}  // Add this line
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"  // Add disabled styles
-              >
-                {isLoading ? (  // Add this conditional rendering
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Loading...</span>
-                  </div>
-                ) : (
-                  "Login"
-                )}
-              </button>
+                <button
+                  onClick={handleLogin}
+                  disabled={isLoading}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    "Login"
+                  )}
+                </button>
                 <button
                   onClick={() => setShowSignup(true)}
                   className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -120,10 +173,10 @@ const Header: React.FC = () => {
               <>
                 <button
                   onClick={handleSignup}
-                  disabled={isLoading}  // Add this line
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"  // Add disabled styles
+                  disabled={isLoading}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? (  // Add this conditional rendering
+                  {isLoading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       <span>Loading...</span>
